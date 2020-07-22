@@ -7,6 +7,7 @@ from pytorch_lightning.callbacks import (
     ModelCheckpoint, LearningRateLogger, EarlyStopping)
 from src.pl_module import MelanomaModel
 import os
+import sys
 
 SEED = 12
 seed_everything(12)
@@ -64,7 +65,8 @@ if __name__ == "__main__":
     parser.add_argument("--profiler", default=False, type=bool)
     parser.add_argument("--fast_dev_run", default=False, type=bool)
     parser.add_argument("--auto_lr_find", default=False, type=bool)
-
+    parser.add_argument("--use_external", default=False, type=bool)
+    parser.add_argument("--external_image_folder", default=None)
     parser.add_argument("--precision", default=16, type=int)
     parser.add_argument("--val_check_interval", default=1.0, type=float)
     parser.add_argument("--limit_train_batches", default=1.0, type=float)
@@ -93,4 +95,7 @@ if __name__ == "__main__":
     parser.add_argument("--gradient_clip_val", default=10, type=float)
 
     args = parser.parse_args()
+    if args.use_external and not args.external_image_folder:
+        print("No external image folder provided, but requisted to use external data")
+        sys.exit(1)
     main(args)

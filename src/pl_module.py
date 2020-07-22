@@ -39,8 +39,12 @@ class MelanomaModel(pl.LightningModule):
         y_pred = nn.Softmax(dim=1)(y_hat).detach().cpu().numpy()[:, 1]
         y_true = batch['target'].detach().cpu().numpy().argmax(axis=1).clip(min=0, max=1).astype(int)  # dirty way
 
-        batch_roc_auc = roc_auc_score(y_true, y_pred)
-        batch_ap = average_precision_score(y_true, y_pred)
+        if all(y_true == 0) or all(y_true == 1):
+            batch_roc_auc = 0.0
+            batch_ap = 0.0
+        else:
+            batch_roc_auc = roc_auc_score(y_true, y_pred)
+            batch_ap = average_precision_score(y_true, y_pred)
 
         train_step = {
             "loss": loss,
@@ -63,9 +67,12 @@ class MelanomaModel(pl.LightningModule):
 
         y_pred = nn.Softmax(dim=1)(y_hat).detach().cpu().numpy()[:, 1]
         y_true = batch['target'].detach().cpu().numpy().argmax(axis=1).clip(min=0, max=1).astype(int)  # dirty way
-
-        batch_roc_auc = roc_auc_score(y_true, y_pred)
-        batch_ap = average_precision_score(y_true, y_pred)
+        if all(y_true == 0) or all(y_true == 1):
+            batch_roc_auc = 0.0
+            batch_ap = 0.0
+        else:
+            batch_roc_auc = roc_auc_score(y_true, y_pred)
+            batch_ap = average_precision_score(y_true, y_pred)
 
         val_step = {
             "val_loss": loss,
@@ -139,7 +146,8 @@ class MelanomaModel(pl.LightningModule):
         train_dataset = MelanomaDataset(
                 mode="train",
                 config=self.hparams,
-                transform=get_training_trasnforms(self.hparams.training_transforms)
+                transform=get_training_trasnforms(self.hparams.training_transforms),
+                use_external=self.hparams.use_external
         )
 
         return DataLoader(
@@ -194,12 +202,12 @@ class MelanomaModel(pl.LightningModule):
             return torch.optim.Adam(
                 self.net.parameters(),
                 lr=self.learning_rate,
-                weight_decay=self.weight_decay)
+                weight_decay=self.hparams.weight_decay)
         elif "adamw" == self.hparams.optimizer:
             return torch.optim.AdamW(
                 self.net.parameters(),
                 lr=self.learning_rate,
-                weight_decay=self.weight_decay)
+                weight_decay=self.hparams.weight_decay)
         elif "sgd" == self.hparams.optimizer:
             return torch.optim.SGD(
                 self.net.parameters(),
@@ -211,31 +219,31 @@ class MelanomaModel(pl.LightningModule):
             return RAdam(
                 self.net.parameters(),
                 lr=self.learning_rate,
-                weight_decay=self.weight_decay
+                weight_decay=self.hparams.weight_decay
             )
         elif "ralamb" == self.hparams.optimizer:
             return Ralamb(
                 self.net.parameters(),
                 lr=self.learning_rate,
-                weight_decay=self.weight_decay
+                weight_decay=self.hparams.weight_decay
             )
         elif "qhadamw" == self.hparams.optimizer:
             return QHAdamW(
                 self.net.parameters(),
                 lr=self.learning_rate,
-                weight_decay=self.weight_decay
+                weight_decay=self.hparams.weight_decay
             )
         elif "lamb" == self.hparams.optimizer:
             return Lamb(
                 self.net.parameters(),
                 lr=self.learning_rate,
-                weight_decay=self.weight_decay
+                weight_decay=self.hparams.weight_decay
             )
         elif "radam+lookahead" == self.hparams.optimizer:
             optimizer = RAdam(
                 self.net.parameters(),
                 lr=self.learning_rate,
-                weight_decay=self.weight_decay
+                weight_decay=self.hparams.weight_decay
             )
             return Lookahead(optimizer)
         else:
