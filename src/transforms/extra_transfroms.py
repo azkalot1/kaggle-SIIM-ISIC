@@ -7,7 +7,12 @@ import torch.functional as F
 
 
 class AdvancedHairAugmentation(A.ImageOnlyTransform):
-    def __init__(self, hairs: int = 5, hairs_folder: str = "../../data/hair_transforms/", always_apply=False, p=0.5):
+    def __init__(
+        self,
+        hairs: int = 5,
+        hairs_folder: str = "/home/skolchenko/projects/kaggle-SIIM-ISIC/data/hair_transforms/",
+        always_apply=False,
+            p=0.5):
         self.hairs = hairs
         self.hairs_folder = hairs_folder
         super().__init__(always_apply, p)
@@ -23,6 +28,7 @@ class AdvancedHairAugmentation(A.ImageOnlyTransform):
 
         for _ in range(n_hairs):
             hair = cv2.imread(os.path.join(self.hairs_folder, random.choice(hair_images)))
+            hair = cv2.resize(hair, img.shape[:2])
             hair = cv2.flip(hair, random.choice([-1, 0, 1]))
             hair = cv2.rotate(hair, random.choice([0, 1, 2]))
 

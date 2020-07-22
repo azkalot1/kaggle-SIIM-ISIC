@@ -12,7 +12,7 @@ from src.models.networks import (
     ClassificationSingleHeadMax, ClassificationDounleHeadMax,
     ClassificationSingleHeadConcat, ClassificationDounleHeadConcat)
 from src.transforms.albu import get_valid_transforms, get_training_trasnforms
-#from catalyst.contrib.nn.optimizers import RAdam, Lookahead  # add to contrib
+from src.contrib.optimizers import RAdam, Lamb, QHAdamW, Ralamb, Lookahead
 import numpy as np
 
 
@@ -193,11 +193,13 @@ class MelanomaModel(pl.LightningModule):
         if "adam" == self.hparams.optimizer:
             return torch.optim.Adam(
                 self.net.parameters(),
-                lr=self.learning_rate)
+                lr=self.learning_rate,
+                weight_decay=self.weight_decay)
         elif "adamw" == self.hparams.optimizer:
             return torch.optim.AdamW(
                 self.net.parameters(),
-                lr=self.learning_rate)
+                lr=self.learning_rate,
+                weight_decay=self.weight_decay)
         elif "sgd" == self.hparams.optimizer:
             return torch.optim.SGD(
                 self.net.parameters(),
@@ -208,12 +210,32 @@ class MelanomaModel(pl.LightningModule):
         elif "radam" == self.hparams.optimizer:
             return RAdam(
                 self.net.parameters(),
-                lr=self.learning_rate
+                lr=self.learning_rate,
+                weight_decay=self.weight_decay
+            )
+        elif "ralamb" == self.hparams.optimizer:
+            return Ralamb(
+                self.net.parameters(),
+                lr=self.learning_rate,
+                weight_decay=self.weight_decay
+            )
+        elif "qhadamw" == self.hparams.optimizer:
+            return QHAdamW(
+                self.net.parameters(),
+                lr=self.learning_rate,
+                weight_decay=self.weight_decay
+            )
+        elif "lamb" == self.hparams.optimizer:
+            return Lamb(
+                self.net.parameters(),
+                lr=self.learning_rate,
+                weight_decay=self.weight_decay
             )
         elif "radam+lookahead" == self.hparams.optimizer:
             optimizer = RAdam(
                 self.net.parameters(),
-                lr=self.learning_rate
+                lr=self.learning_rate,
+                weight_decay=self.weight_decay
             )
             return Lookahead(optimizer)
         else:
