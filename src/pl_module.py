@@ -12,6 +12,7 @@ from src.models.networks import (
     ClassificationSingleHeadMax, ClassificationDounleHeadMax,
     ClassificationSingleHeadConcat, ClassificationDounleHeadConcat)
 from src.transforms.albu import get_valid_transforms, get_training_trasnforms
+from src.transforms.extra_transfroms import mixup_data, mixup_criterion
 from src.contrib.optimizers import RAdam, Lamb, QHAdamW, Ralamb, Lookahead
 import numpy as np
 
@@ -29,12 +30,22 @@ class MelanomaModel(pl.LightningModule):
 
         self.val_df = None
 
+        self.use_mixup = hparams.use_mixup
+        if self.use_mixup:
+            print('===== Initialized with mixup ====')
+        self.alpha = hparams.mixup_alpha
+
     def forward(self, x: torch.tensor):
         return self.net(x)
 
     def training_step(self, batch, batch_idx: int) -> dict:
-        y_hat = self.forward(batch['features'])
-        loss = self.criterion(y_hat, batch['target'])
+        if self.use_mixup:
+            x, targets_a, targets_b, lam = mixup_data(batch['features'], batch['target'], self.alpha)
+            y_hat = self.forward(x)
+            loss = mixup_criterion(self.criterion, y_hat, targets_a, targets_b, lam)
+        else:
+            y_hat = self.forward(batch['features'])
+            loss = self.criterion(y_hat, batch['target'])
 
         y_pred = nn.Softmax(dim=1)(y_hat).detach().cpu().numpy()[:, 1]
         y_true = batch['target'].detach().cpu().numpy().argmax(axis=1).clip(min=0, max=1).astype(int)  # dirty way
@@ -96,8 +107,12 @@ class MelanomaModel(pl.LightningModule):
         targets = np.concatenate(
             [x["targets"] for x in outputs])
 
-        roc_auc = roc_auc_score(targets, predictions)
-        ap = average_precision_score(targets, predictions)
+        if all(targets == 0) or all(targets == 1):
+            roc_auc = 0.0
+            ap = 0.0
+        else:
+            roc_auc = roc_auc_score(targets, predictions)
+            ap = average_precision_score(targets, predictions)
 
         train_epoch_end = {
             "loss": avg_loss,
@@ -120,8 +135,12 @@ class MelanomaModel(pl.LightningModule):
         targets = np.concatenate(
             [x["val_targets"] for x in outputs])
 
-        roc_auc = roc_auc_score(targets, predictions)
-        ap = average_precision_score(targets, predictions)
+        if all(targets == 0) or all(targets == 1):
+            roc_auc = 0.0
+            ap = 0.0
+        else:
+            roc_auc = roc_auc_score(targets, predictions)
+            ap = average_precision_score(targets, predictions)
 
         val_epoch_end = {
             "val_loss": avg_loss,

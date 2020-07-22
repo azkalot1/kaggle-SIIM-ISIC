@@ -15,7 +15,7 @@ seed_everything(12)
 
 def main(hparams: Namespace):
     now = datetime.datetime.now().strftime("%d.%H")
-    experiment_name = f"{now}_{hparams.model_type}_{hparams.model_name}_{hparams.criterion}_fold_{hparams.fold}"
+    experiment_name = f"{now}_{hparams.model_type}_{hparams.model_name}_{hparams.criterion}_{hparams.optimizer}_{hparams.training_transforms}_fold_{hparams.fold}"
 
     model = MelanomaModel(hparams=hparams)
 
@@ -61,7 +61,8 @@ if __name__ == "__main__":
     parser.add_argument("--resume_from_checkpoint", default=None, type=str)
     parser.add_argument("--image_folder", default="./data/jpeg-isic2019-128x128/train")
     parser.add_argument("--training_transforms", default="light")
-
+    parser.add_argument("--use_mixup", default=False)
+    parser.add_argument("--mixup_alpha", default=1.0, type=float)
     parser.add_argument("--profiler", default=False, type=bool)
     parser.add_argument("--fast_dev_run", default=False, type=bool)
     parser.add_argument("--auto_lr_find", default=False, type=bool)
