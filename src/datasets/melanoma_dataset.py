@@ -52,6 +52,28 @@ class MelanomaDataset(Dataset):
         return{'features': image, 'target': target}
 
 
+class MelanomaDatasetTest(Dataset):
+    def __init__(self, config: Namespace, transform=None, use_external=False):
+        super().__init__()
+        self.image_folder = config.test_image_folder
+        self.df = pd.read_csv(f"{config.data_path}/test.csv")
+        self.transform = transform
+
+    def __len__(self) -> int:
+        return self.df.shape[0]
+
+    def __getitem__(self, index) -> Tuple[torch.Tensor, torch.Tensor]:
+        row = self.df.iloc[index]
+        img_id = row.image_name
+        img_path = f"{self.image_folder}/{img_id}.jpg"
+        image = skimage.io.imread(img_path)
+        if self.transform is not None:
+            image = self.transform(image=image)['image']
+        image = image.transpose(2, 0, 1)
+        image = torch.from_numpy(image)
+        return{'features': image, 'img_id': img_id}
+
+
 if __name__ == '__main__':
     # Debug:
     parser = ArgumentParser(add_help=False)

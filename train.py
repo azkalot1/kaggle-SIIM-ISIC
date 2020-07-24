@@ -33,7 +33,7 @@ def main(hparams: Namespace):
     callbacks = [LearningRateLogger()]
     checkpoint_callback = ModelCheckpoint(
         filepath=f"weights/{experiment_name}_" + "best_{val_loss:.4f}_{val_roc_auc:.4f}",
-        monitor='val_loss', save_top_k=10, mode='min', save_last=True)
+        monitor='val_loss', save_top_k=5, mode='min', save_last=True)
     early_stop_callback = EarlyStopping(
         monitor='val_loss', patience=15, mode='min', verbose=True)
 
@@ -60,8 +60,10 @@ if __name__ == "__main__":
     )
     parser.add_argument("--resume_from_checkpoint", default=None, type=str)
     parser.add_argument("--image_folder", default="./data/jpeg-isic2019-128x128/train")
+    parser.add_argument("--test_image_folder", default="./data/jpeg-isic2019-128x128/test")
     parser.add_argument("--training_transforms", default="light")
-    parser.add_argument("--use_mixup", default=False)
+    parser.add_argument("--use_mixup", default=False, type=bool)
+    parser.add_argument("--make_submission", default=False, type=bool)
     parser.add_argument("--mixup_alpha", default=1.0, type=float)
     parser.add_argument("--profiler", default=False, type=bool)
     parser.add_argument("--fast_dev_run", default=False, type=bool)
