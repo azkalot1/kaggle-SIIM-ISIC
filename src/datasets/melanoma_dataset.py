@@ -74,6 +74,49 @@ class MelanomaDatasetTest(Dataset):
         return{'features': image, 'img_id': img_id}
 
 
+class AdLearningMelanomaDataset(Dataset):
+    def __init__(self, mode: str, config: Namespace, transform=None, use_external=False):
+        super().__init__()
+        self.mode = mode
+        if mode not in ['train', 'val']:
+            raise NotImplementedError("Not implemented dataset configuration")
+        self.image_folder = config.image_folder
+        self.external_image_folder = config.external_image_folder
+        self.fold = config.fold
+        self.df = pd.read_csv(f"{config.data_path}/{mode}_{config.fold}.csv")
+        self.df.loc[:, 'data_t'] = 'competition'
+        if use_external:
+            print(f'Will use external data for {mode}')
+            self.external_df = pd.read_csv(f"{config.data_path}/external_{mode}_{config.fold}.csv")
+            self.external_df.loc[:, 'data_t'] = 'external'
+            self.df = pd.concat([self.df, self.external_df])
+        self.transform = transform
+
+    def __len__(self) -> int:
+        return self.df.shape[0]
+
+    def __getitem__(self, index) -> Tuple[torch.Tensor, torch.Tensor]:
+        row = self.df.iloc[index]
+        img_id = row.image_name
+        img_type = row.data_t
+        if img_type == 'competition':
+            img_path = f"{self.image_folder}/{img_id}.jpg"
+        else:
+            img_path = f"{self.external_image_folder}/{img_id}.jpg"
+        image = skimage.io.imread(img_path)
+        if self.transform is not None:
+            image = self.transform(image=image)['image']
+        image = image.transpose(2, 0, 1)
+        image = torch.from_numpy(image)
+        label = row.data_t
+        if label == 'competition':
+            label = 1
+        else:
+            label = 0
+        target = onehot(2, label)
+        return{'features': image, 'target': target}
+
+
 if __name__ == '__main__':
     # Debug:
     parser = ArgumentParser(add_help=False)

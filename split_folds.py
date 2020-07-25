@@ -27,8 +27,6 @@ def split_save_folds(csv_path, external_csv_path, n_splits, group_column, data_p
         external_data_train, external_data_val = external_data.iloc[train_index, :], external_data.iloc[test_index, :]
         external_data_train.to_csv(f"{data_path}/external_train_{fold_idx}.csv", index=False)
         external_data_val.to_csv(f"{data_path}/external_val_{fold_idx}.csv", index=False)
-        # dummy check
-        assert external_data_train[group_column].values[0] not in external_data_val[group_column]
 
 
 if __name__ == '__main__':
@@ -41,5 +39,5 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     print(f'Will split data into {args.n_folds} folds')
-    assert not os.path.exists(f'{args.data_path}/train_0.csv'), 'Fold split already exists!'
+    #assert not os.path.exists(f'{args.data_path}/train_0.csv'), 'Fold split already exists!'
     split_save_folds(args.train_csv, args.external_train_csv, args.n_folds, args.group_column, args.data_path)

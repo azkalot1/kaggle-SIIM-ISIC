@@ -7,7 +7,7 @@ from torch.optim.lr_scheduler import (
 from warmup_scheduler import GradualWarmupScheduler
 from torch.utils.data import DataLoader
 from torch.utils.data.sampler import RandomSampler, SequentialSampler
-from src.datasets.melanoma_dataset import MelanomaDataset
+from src.datasets.melanoma_dataset import MelanomaDataset, AdLearningMelanomaDataset
 from src.models.networks import (
     ClassificationSingleHeadMax, ClassificationDounleHeadMax,
     ClassificationSingleHeadConcat, ClassificationDounleHeadConcat)
@@ -162,12 +162,20 @@ class MelanomaModel(pl.LightningModule):
         return [optimizer], [scheduler]
 
     def train_dataloader(self) -> torch.utils.data.DataLoader:
-        train_dataset = MelanomaDataset(
-                mode="train",
-                config=self.hparams,
-                transform=get_training_trasnforms(self.hparams.training_transforms),
-                use_external=self.hparams.use_external
-        )
+        if self.hparams.training_type != 'ad_learning':
+            train_dataset = MelanomaDataset(
+                    mode="train",
+                    config=self.hparams,
+                    transform=get_training_trasnforms(self.hparams.training_transforms),
+                    use_external=self.hparams.use_external
+            )
+        else:
+            train_dataset = AdLearningMelanomaDataset(
+                    mode="train",
+                    config=self.hparams,
+                    transform=get_training_trasnforms(self.hparams.training_transforms),
+                    use_external=self.hparams.use_external
+            )        
 
         return DataLoader(
             train_dataset,
@@ -178,12 +186,20 @@ class MelanomaModel(pl.LightningModule):
         )
 
     def val_dataloader(self) -> torch.utils.data.DataLoader:
-        val_dataset = MelanomaDataset(
-                mode="val",
-                config=self.hparams,
-                transform=get_valid_transforms()
-        )
-
+        if self.hparams.training_type != 'ad_learning':
+            val_dataset = MelanomaDataset(
+                    mode="val",
+                    config=self.hparams,
+                    transform=get_valid_transforms()
+            )
+        else:
+            val_dataset = AdLearningMelanomaDataset(
+                    mode="val",
+                    config=self.hparams,
+                    transform=get_valid_transforms(),
+                    use_external=self.hparams.use_external
+            )
+   
         self.val_df = val_dataset.df
 
         return DataLoader(
@@ -295,3 +311,5 @@ class MelanomaModel(pl.LightningModule):
                 after_scheduler=cosine)
         else:
             raise NotImplementedError("Not a valid scheduler configuration.")
+
+

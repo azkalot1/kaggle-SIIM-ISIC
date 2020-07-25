@@ -9,6 +9,7 @@ from tqdm.auto import tqdm
 from src.datasets.melanoma_dataset import MelanomaDatasetTest
 from src.pl_module import MelanomaModel
 from src.transforms.albu import get_valid_transforms
+from typing import List
 SEED = 111
 seed_everything(111)
 
@@ -36,24 +37,29 @@ def load_model(model_name: str, model_type: str, weights: str):
 
 
 def run_predictions(
-    model: torch.nn.Module,
+    models: List[torch.nn.Module],
     loader: DataLoader,
     precision: int = 16
 ):
     preds = list()
     with torch.no_grad():
         for batch in tqdm(loader, total=len(loader)):
-            y_hat = model(batch['features'].cuda())
-            pred = nn.Sigmoid()(y_hat).cpu().numpy()
-            pred = pred[:, 1]
+            pred = [nn.Sigmoid()(model(batch['features'].cuda())) for model in models]
+            pred = torch.stack(pred)
+            pred = pred.mean(axis=0)
+            pred = pred[:, 1].cpu().numpy()
             preds.extend(pred)
     return preds
 
 
 def main(hparams: Namespace):
     loader = get_test_dataloder(hparams)
-    model = load_model(hparams.model_name, hparams.model_type,  hparams.weights)
-    predictions = run_predictions(model, loader)
+    model_names = hparams.model_name.split(',')
+    model_types = hparams.model_type.split(',')
+    weights = hparams.weights.split(',')
+    models = [load_model(model_name, model_type, weight)
+              for model_name, model_type, weight in zip(model_names, model_types,  weights)]
+    predictions = run_predictions(models, loader)
     sample_submission = pd.read_csv(hparams.sample_submission_path)
     sample_submission.loc[:, 'target'] = predictions
     sample_submission.to_csv(f'./predictions/{hparams.submission_name}.csv', index=False)
@@ -69,7 +75,7 @@ if __name__ == "__main__":
     parser.add_argument("--submission_name", default="test_sub", type=str)
     parser.add_argument("--model_type", default="SingleHeadMax", type=str)
     parser.add_argument("--model_name", default="resnet34", type=str)
-    parser.add_argument("--weights", default="resnet34", type=str)
+    parser.add_argument("--weights", type=str)
     parser.add_argument("--batch_size", default=32, type=int)
     parser.add_argument("--num_workers", default=8, type=int)
     parser.add_argument("--sample_submission_path", default='data/sample_submission.csv', type=str)

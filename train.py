@@ -15,8 +15,10 @@ seed_everything(12)
 
 def main(hparams: Namespace):
     now = datetime.datetime.now().strftime("%d.%H")
-    experiment_name = f"{now}_{hparams.model_type}_{hparams.model_name}_{hparams.criterion}_{hparams.optimizer}_{hparams.training_transforms}_fold_{hparams.fold}"
-
+    if hparams.experiment_name is None:
+        experiment_name = f"{now}_{hparams.model_type}_{hparams.model_name}_{hparams.criterion}_{hparams.optimizer}_{hparams.training_transforms}_fold_{hparams.fold}"
+    else:
+        experiment_name = hparams.experiment_name
     model = MelanomaModel(hparams=hparams)
 
     pl_loggers = [
@@ -55,12 +57,11 @@ if __name__ == "__main__":
     # TODO: move configuration to *.yaml with Hydra
     parser = ArgumentParser(add_help=False)
 
-    parser.add_argument(
-        "--data_path", default="./data/"
-    )
+    parser.add_argument("--data_path", default="./data/")
+    parser.add_argument("--experiment_name", default=None)   
     parser.add_argument("--resume_from_checkpoint", default=None, type=str)
-    parser.add_argument("--image_folder", default="./data/jpeg-isic2019-128x128/train")
-    parser.add_argument("--test_image_folder", default="./data/jpeg-isic2019-128x128/test")
+    parser.add_argument("--image_folder", default="./data/jpeg-melanoma-128x128/train")
+    parser.add_argument("--test_image_folder", default="./data/jpeg-melanoma-128x128/test")
     parser.add_argument("--training_transforms", default="light")
     parser.add_argument("--use_mixup", default=False, type=bool)
     parser.add_argument("--make_submission", default=False, type=bool)
@@ -70,6 +71,7 @@ if __name__ == "__main__":
     parser.add_argument("--auto_lr_find", default=False, type=bool)
     parser.add_argument("--use_external", default=False, type=bool)
     parser.add_argument("--external_image_folder", default=None)
+    parser.add_argument("--training_type", default='normal')
     parser.add_argument("--precision", default=16, type=int)
     parser.add_argument("--val_check_interval", default=1.0, type=float)
     parser.add_argument("--limit_train_batches", default=1.0, type=float)
@@ -100,5 +102,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
     if args.use_external and not args.external_image_folder:
         print("No external image folder provided, but requisted to use external data")
+        sys.exit(1)
+    if args.training_type == "ad_learning" and not args.external_image_folder:
+        print("Ad learning is requested, but no external data is provided")
         sys.exit(1)
     main(args)
