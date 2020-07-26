@@ -53,7 +53,7 @@ class MelanomaDataset(Dataset):
 
 
 class MelanomaDatasetTest(Dataset):
-    def __init__(self, config: Namespace, transform=None, use_external=False):
+    def __init__(self, config: Namespace, transform=None):
         super().__init__()
         self.image_folder = config.test_image_folder
         self.df = pd.read_csv(f"{config.data_path}/test.csv")
