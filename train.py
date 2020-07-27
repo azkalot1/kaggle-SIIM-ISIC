@@ -21,6 +21,10 @@ def main(hparams: Namespace):
         experiment_name = hparams.experiment_name
     model = MelanomaModel(hparams=hparams)
 
+    if hparams.load_weights is not None:
+        print(f'Restoring checkpoint {hparams.load_weights}')
+        model.load_weights_from_checkpoint(hparams.load_weights)
+
     pl_loggers = [
         loggers.TensorBoardLogger(
             f"logs/",
@@ -58,14 +62,16 @@ if __name__ == "__main__":
     parser = ArgumentParser(add_help=False)
 
     parser.add_argument("--data_path", default="./data/")
-    parser.add_argument("--experiment_name", default=None)   
-    parser.add_argument("--resume_from_checkpoint", default=None, type=str)
+    parser.add_argument("--experiment_name", default=None)
+    parser.add_argument("--load_weights", default=None, type=str)
     parser.add_argument("--image_folder", default="./data/jpeg-melanoma-128x128/train")
     parser.add_argument("--test_image_folder", default="./data/jpeg-melanoma-128x128/test")
     parser.add_argument("--training_transforms", default="light")
     parser.add_argument("--use_mixup", default=False, type=bool)
     parser.add_argument("--make_submission", default=False, type=bool)
     parser.add_argument("--mixup_alpha", default=1.0, type=float)
+    parser.add_argument("--generated_data_csv", type=str)
+    parser.add_argument("--generated_data_image_folder", type=str)
     parser.add_argument("--profiler", default=False, type=bool)
     parser.add_argument("--fast_dev_run", default=False, type=bool)
     parser.add_argument("--auto_lr_find", default=False, type=bool)
@@ -106,4 +112,10 @@ if __name__ == "__main__":
     if args.training_type == "ad_learning" and not args.external_image_folder:
         print("Ad learning is requested, but no external data is provided")
         sys.exit(1)
+    if args.training_type == "learning_from_generated_data" and not args.generated_data_csv:
+        print("Learning from generated data is requested, but no generated_data_csv is provided")
+        sys.exit(1)
+    if args.training_type == "learning_from_generated_data" and not args.generated_data_image_folder:
+        print("Learning from generated data is requested, but no generated_data_image_folder is provided")
+        sys.exit(1)             
     main(args)

@@ -74,6 +74,37 @@ class MelanomaDatasetTest(Dataset):
         return{'features': image, 'img_id': img_id}
 
 
+class MelanomaDatasetGeneratedData(Dataset):
+    def __init__(self, mode: str, config: Namespace, transform=None):
+        super().__init__()
+        self.mode = mode
+        if mode not in ['train', 'val']:
+            raise NotImplementedError("Not implemented dataset configuration")
+        self.fold = config.fold
+        self.df = pd.read_csv(f"{config.data_path}/{config.generated_data_csv}.csv")
+        self.image_folder = config.generated_data_image_folder
+        self.transform = transform
+
+    def __len__(self) -> int:
+        return self.df.shape[0]
+
+    def __getitem__(self, index) -> Tuple[torch.Tensor, torch.Tensor]:
+        row = self.df.iloc[index]
+        img_id = row.image_name
+        img_path = f"{self.image_folder}/{img_id}.jpg"
+        image = skimage.io.imread(img_path)
+        if self.transform is not None:
+            image = self.transform(image=image)['image']
+        image = image.transpose(2, 0, 1)
+        image = torch.from_numpy(image)
+        label_cls_1 = row.target
+        label_cls_0 = 1 - label_cls_1
+        target = torch.zeros(2, dtype=torch.float32)
+        target[0] = label_cls_0
+        target[1] = label_cls_1
+        return{'features': image, 'target': target}
+
+
 class AdLearningMelanomaDataset(Dataset):
     def __init__(self, mode: str, config: Namespace, transform=None, use_external=False):
         super().__init__()

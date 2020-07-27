@@ -7,7 +7,10 @@ from torch.optim.lr_scheduler import (
 from warmup_scheduler import GradualWarmupScheduler
 from torch.utils.data import DataLoader
 from torch.utils.data.sampler import RandomSampler, SequentialSampler
-from src.datasets.melanoma_dataset import MelanomaDataset, AdLearningMelanomaDataset
+from src.datasets.melanoma_dataset import (
+    MelanomaDataset,
+    AdLearningMelanomaDataset,
+    MelanomaDatasetGeneratedData)
 from src.models.networks import (
     ClassificationSingleHeadMax, ClassificationDounleHeadMax,
     ClassificationSingleHeadConcat, ClassificationDounleHeadConcat)
@@ -162,20 +165,28 @@ class MelanomaModel(pl.LightningModule):
         return [optimizer], [scheduler]
 
     def train_dataloader(self) -> torch.utils.data.DataLoader:
-        if self.hparams.training_type != 'ad_learning':
+        if self.hparams.training_type == 'normal':
             train_dataset = MelanomaDataset(
                     mode="train",
                     config=self.hparams,
                     transform=get_training_trasnforms(self.hparams.training_transforms),
                     use_external=self.hparams.use_external
             )
-        else:
+        elif self.hparams.training_type == 'ad_learning':
             train_dataset = AdLearningMelanomaDataset(
                     mode="train",
                     config=self.hparams,
                     transform=get_training_trasnforms(self.hparams.training_transforms),
                     use_external=self.hparams.use_external
-            )        
+            )
+        elif self.hparams.training_type == 'learning_from_generated_data':
+            train_dataset = MelanomaDatasetGeneratedData(
+                    mode="train",
+                    config=self.hparams,
+                    transform=get_training_trasnforms(self.hparams.training_transforms),
+            )
+        else:
+            raise NotImplementedError
 
         return DataLoader(
             train_dataset,
@@ -199,7 +210,7 @@ class MelanomaModel(pl.LightningModule):
                     transform=get_valid_transforms(),
                     use_external=self.hparams.use_external
             )
-   
+
         self.val_df = val_dataset.df
 
         return DataLoader(
@@ -312,4 +323,21 @@ class MelanomaModel(pl.LightningModule):
         else:
             raise NotImplementedError("Not a valid scheduler configuration.")
 
+    def load_weights_from_checkpoint(self, checkpoint: str) -> None:
+        """ Function that loads the weights from a given checkpoint file. 
+        Note:
+            If the checkpoint model architecture is different then `self`, only
+            the common parts will be loaded.
 
+        :param checkpoint: Path to the checkpoint containing the weights to be loaded.
+        """
+        checkpoint = torch.load(checkpoint, map_location=lambda storage, loc: storage,)
+        pretrained_dict = checkpoint["state_dict"]
+        model_dict = self.state_dict()
+
+        # 1. filter out unnecessary keys
+        pretrained_dict = {k: v for k, v in pretrained_dict.items() if k in model_dict}
+        # 2. overwrite entries in the existing state dict
+        model_dict.update(pretrained_dict)
+        # 3. load the new state dict
+        self.load_state_dict(pretrained_dict)
