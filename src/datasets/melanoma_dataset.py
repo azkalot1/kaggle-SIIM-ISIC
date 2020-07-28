@@ -30,6 +30,8 @@ class MelanomaDataset(Dataset):
             self.external_df.loc[:, 'data_t'] = 'external'
             self.df = pd.concat([self.df, self.external_df])
         self.transform = transform
+        self.targets = self.df.target.values
+        self.target_counts = self.df.target.value_counts().values
 
     def __len__(self) -> int:
         return self.df.shape[0]

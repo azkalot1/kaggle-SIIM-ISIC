@@ -70,6 +70,7 @@ if __name__ == "__main__":
     parser.add_argument("--use_mixup", default=False, type=bool)
     parser.add_argument("--make_submission", default=False, type=bool)
     parser.add_argument("--mixup_alpha", default=1.0, type=float)
+    parser.add_argument("--use_weightened", default=False, type=bool)
     parser.add_argument("--generated_data_csv", type=str)
     parser.add_argument("--generated_data_image_folder", type=str)
     parser.add_argument("--profiler", default=False, type=bool)

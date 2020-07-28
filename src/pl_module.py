@@ -6,7 +6,7 @@ from torch.optim.lr_scheduler import (
     ReduceLROnPlateau, CyclicLR, CosineAnnealingLR)
 from warmup_scheduler import GradualWarmupScheduler
 from torch.utils.data import DataLoader
-from torch.utils.data.sampler import RandomSampler, SequentialSampler
+from torch.utils.data.sampler import RandomSampler, SequentialSampler, WeightedRandomSampler
 from src.datasets.melanoma_dataset import (
     MelanomaDataset,
     AdLearningMelanomaDataset,
@@ -187,11 +187,21 @@ class MelanomaModel(pl.LightningModule):
             )
         else:
             raise NotImplementedError
-
+        if not self.hparams.use_weightened:
+            sampler = RandomSampler(train_dataset)
+        else:
+            sample_count = train_dataset.target_counts
+            weight = 1 / torch.Tensor(sample_count)
+            targets = train_dataset.targets
+            samples_weights = weight[targets]
+            sampler = WeightedRandomSampler(
+                samples_weights,
+                num_samples=len(samples_weights),
+                replacement=True)
         return DataLoader(
             train_dataset,
             batch_size=self.batch_size,
-            sampler=RandomSampler(train_dataset),
+            sampler=sampler,
             num_workers=self.hparams.num_workers,
             pin_memory=True
         )
@@ -324,7 +334,7 @@ class MelanomaModel(pl.LightningModule):
             raise NotImplementedError("Not a valid scheduler configuration.")
 
     def load_weights_from_checkpoint(self, checkpoint: str) -> None:
-        """ Function that loads the weights from a given checkpoint file. 
+        """ Function that loads the weights from a given checkpoint file.
         Note:
             If the checkpoint model architecture is different then `self`, only
             the common parts will be loaded.
