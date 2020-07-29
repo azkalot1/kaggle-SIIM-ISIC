@@ -27,9 +27,19 @@ def get_test_dataloder(hparams: Namespace) -> DataLoader:
 
 def load_model(model_name: str, model_type: str, weights: str):
     model = MelanomaModel.net_mapping(model_name, model_type)
-    model.load_state_dict(
-        torch.load(weights)
-    )
+    if weights.endswith('.pth'):
+        model.load_state_dict(
+            torch.load(weights)
+        )
+    elif weights.endswith('.ckpt'):
+        checkpoint = torch.load(weights, map_location=lambda storage, loc: storage)
+        pretrained_dict = checkpoint["state_dict"]
+        model_dict = model.state_dict()
+        pretrained_dict = {k[4:]: v for k, v in pretrained_dict.items() if k[4:] in model_dict}  # net.
+        model_dict.update(pretrained_dict)
+        model.load_state_dict(pretrained_dict)
+    else:
+        raise NotImplementedError    
     model.eval()
     model.cuda()
     print("Loaded model {} from checkpoint {}".format(model_name, weights))

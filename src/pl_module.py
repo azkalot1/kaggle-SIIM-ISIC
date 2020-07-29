@@ -50,8 +50,10 @@ class MelanomaModel(pl.LightningModule):
             y_hat = self.forward(batch['features'])
             loss = self.criterion(y_hat, batch['target'])
 
-        y_pred = nn.Softmax(dim=1)(y_hat).detach().cpu().numpy()[:, 1]
-        y_true = batch['target'].detach().cpu().numpy().argmax(axis=1).clip(min=0, max=1).astype(int)  # dirty way
+        # y_pred = nn.Softmax(dim=1)(y_hat).detach().cpu().numpy()[:, 1]
+        y_pred = nn.Sigmoid()(y_hat).detach().cpu().numpy()
+        # y_true = batch['target'].detach().cpu().numpy().argmax(axis=1).clip(min=0, max=1).astype(int)  # dirty way
+        y_true = batch['target'].detach().cpu().numpy()
 
         if all(y_true == 0) or all(y_true == 1):
             batch_roc_auc = 0.0
@@ -79,8 +81,10 @@ class MelanomaModel(pl.LightningModule):
         y_hat = self.forward(batch['features'])
         loss = self.criterion(y_hat, batch['target'])
 
-        y_pred = nn.Softmax(dim=1)(y_hat).detach().cpu().numpy()[:, 1]
-        y_true = batch['target'].detach().cpu().numpy().argmax(axis=1).clip(min=0, max=1).astype(int)  # dirty way
+        # y_pred = nn.Softmax(dim=1)(y_hat).detach().cpu().numpy()[:, 1]
+        y_pred = nn.Sigmoid()(y_hat).detach().cpu().numpy()
+        # y_true = batch['target'].detach().cpu().numpy().argmax(axis=1).clip(min=0, max=1).astype(int)  # dirty way
+        y_true = batch['target'].detach().cpu().numpy()
         if all(y_true == 0) or all(y_true == 1):
             batch_roc_auc = 0.0
             batch_ap = 0.0

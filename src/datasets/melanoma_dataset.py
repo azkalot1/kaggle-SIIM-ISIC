@@ -5,6 +5,7 @@ import pandas as pd
 import skimage.io
 import torch
 from torch.utils.data import Dataset
+import numpy as np
 
 
 def onehot(size, target):
@@ -50,7 +51,8 @@ class MelanomaDataset(Dataset):
         image = image.transpose(2, 0, 1)
         image = torch.from_numpy(image)
         label = row.target
-        target = onehot(2, label)
+        # target = onehot(2, label)
+        target = torch.tensor(np.expand_dims(label, 0)).float()
         return{'features': image, 'target': target}
 
 
@@ -146,7 +148,8 @@ class AdLearningMelanomaDataset(Dataset):
             label = 1
         else:
             label = 0
-        target = onehot(2, label)
+        # target = onehot(2, label)
+        target = torch.tensor(np.expand_dims(label, 0)).float()
         return{'features': image, 'target': target}
 
 
