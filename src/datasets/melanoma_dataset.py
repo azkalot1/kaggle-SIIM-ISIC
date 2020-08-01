@@ -101,11 +101,8 @@ class MelanomaDatasetGeneratedData(Dataset):
             image = self.transform(image=image)['image']
         image = image.transpose(2, 0, 1)
         image = torch.from_numpy(image)
-        label_cls_1 = row.target
-        label_cls_0 = 1 - label_cls_1
-        target = torch.zeros(2, dtype=torch.float32)
-        target[0] = label_cls_0
-        target[1] = label_cls_1
+        target = row.target
+        target = torch.tensor(np.expand_dims(target, 0)).float()
         return{'features': image, 'target': target}
 
 

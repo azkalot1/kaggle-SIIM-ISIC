@@ -53,15 +53,14 @@ class MelanomaModel(pl.LightningModule):
         # y_pred = nn.Softmax(dim=1)(y_hat).detach().cpu().numpy()[:, 1]
         y_pred = nn.Sigmoid()(y_hat).detach().cpu().numpy()
         # y_true = batch['target'].detach().cpu().numpy().argmax(axis=1).clip(min=0, max=1).astype(int)  # dirty way
-        y_true = batch['target'].detach().cpu().numpy()
+        y_true = (batch['target'].detach().cpu().numpy() > 0.5).astype(int)
 
         if all(y_true == 0) or all(y_true == 1):
             batch_roc_auc = 0.0
             batch_ap = 0.0
         else:
-            batch_roc_auc = roc_auc_score(y_true, y_pred)
+            batch_roc_auc = roc_auc_score(y_true, y_pred)  # if we use generated \ soft labels
             batch_ap = average_precision_score(y_true, y_pred)
-
         train_step = {
             "loss": loss,
             "predictions": y_pred,
@@ -113,12 +112,12 @@ class MelanomaModel(pl.LightningModule):
             [x["predictions"] for x in outputs])
         targets = np.concatenate(
             [x["targets"] for x in outputs])
-
+        targets = (targets > 0.5).astype(int)
         if all(targets == 0) or all(targets == 1):
             roc_auc = 0.0
             ap = 0.0
         else:
-            roc_auc = roc_auc_score(targets, predictions)
+            roc_auc = roc_auc_score(targets, predictions)  # if we use generated \ soft labels
             ap = average_precision_score(targets, predictions)
 
         train_epoch_end = {
