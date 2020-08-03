@@ -54,8 +54,9 @@ def generate_best_weights(weights_path, model, loader):
 
     best_score = 0
     best_weights = []
-
-    for w in all_weights:
+    selected_idx = []
+    for idx, w in enumerate(all_weights):
+        print(f'Processing {weights_path[idx]}')
         current_weights = best_weights + [w]
         average_dict = average_weights(current_weights)
         model.load_state_dict(average_dict)
@@ -65,6 +66,8 @@ def generate_best_weights(weights_path, model, loader):
             print(f'New best score {score}')
             best_score = score
             best_weights.append(w)
+            selected_idx.append(idx)
+    print(f'Using weights {selected_idx}')
     average_dict = average_weights(best_weights)
     return(average_dict)
 

@@ -18,7 +18,7 @@ def main(hparams: Namespace):
     if hparams.experiment_name is None:
         experiment_name = f"{now}_{hparams.model_type}_{hparams.model_name}_{hparams.criterion}_{hparams.optimizer}_{hparams.training_transforms}_fold_{hparams.fold}"
     else:
-        experiment_name = hparams.experiment_name
+        experiment_name = f"{now}_{hparams.experiment_name}"
     model = MelanomaModel(hparams=hparams)
 
     if hparams.load_weights is not None:
