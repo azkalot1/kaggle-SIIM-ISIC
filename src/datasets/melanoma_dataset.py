@@ -21,7 +21,6 @@ class MelanomaDataset(Dataset):
         if mode not in ['train', 'val']:
             raise NotImplementedError("Not implemented dataset configuration")
         self.image_folder = config.image_folder
-        self.external_image_folder = config.external_image_folder
         self.fold = config.fold
         self.df = pd.read_csv(f"{config.data_path}/{mode}_{config.fold}.csv")
         self.df.loc[:, 'data_t'] = 'competition'
@@ -30,6 +29,7 @@ class MelanomaDataset(Dataset):
             self.external_df = pd.read_csv(f"{config.data_path}/external_{mode}_{config.fold}.csv")
             self.external_df.loc[:, 'data_t'] = 'external'
             self.df = pd.concat([self.df, self.external_df])
+            self.external_image_folder = config.external_image_folder
         self.transform = transform
         self.targets = self.df.target.values
         self.target_counts = self.df.target.value_counts().values
