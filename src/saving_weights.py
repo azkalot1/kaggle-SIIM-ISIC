@@ -17,7 +17,7 @@ def average_weights(state_dicts):
     # source https://gist.github.com/qubvel/70c3d5e4cddcde731408f478e12ef87b
     everage_dict = OrderedDict()
     for k in state_dicts[0].keys():
-        everage_dict[k] = sum([state_dict[k] for state_dict in state_dicts]) / len(state_dicts)
+        everage_dict[k] = torch.true_divide(sum([state_dict[k] for state_dict in state_dicts]), len(state_dicts))
     return everage_dict
 
 
