@@ -1,5 +1,7 @@
 from src.saving_weights import get_save_averaged_best_weights
 from argparse import ArgumentParser
+import torch.multiprocessing
+torch.multiprocessing.set_sharing_strategy('file_system')
 
 if __name__ == "__main__":
     parser = ArgumentParser(add_help=False)

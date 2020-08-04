@@ -11,6 +11,8 @@ from torch.utils.data import DataLoader
 from collections import OrderedDict
 from tqdm.auto import tqdm
 import torch.nn as nn
+import torch.multiprocessing
+torch.multiprocessing.set_sharing_strategy('file_system')
 
 
 def average_weights(state_dicts):
