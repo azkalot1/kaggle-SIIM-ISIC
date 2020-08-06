@@ -118,5 +118,5 @@ if __name__ == "__main__":
         sys.exit(1)
     if args.training_type == "learning_from_generated_data" and not args.generated_data_image_folder:
         print("Learning from generated data is requested, but no generated_data_image_folder is provided")
-        sys.exit(1)             
+        sys.exit(1)
     main(args)

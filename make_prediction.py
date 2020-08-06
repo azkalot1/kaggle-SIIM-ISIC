@@ -12,6 +12,8 @@ from src.transforms.albu import get_valid_transforms
 from typing import List
 import ttach
 from itertools import cycle
+import torch.multiprocessing
+torch.multiprocessing.set_sharing_strategy('file_system')
 SEED = 111
 seed_everything(111)
 

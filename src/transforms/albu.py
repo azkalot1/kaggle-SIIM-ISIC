@@ -10,6 +10,15 @@ def get_valid_transforms():
         p=1.0)
 
 
+def get_valid_transforms_with_resize(size):
+    return A.Compose(
+        [
+            A.  Resize(size, size),
+            A.Normalize()
+        ],
+        p=1.0)
+
+
 def light_training_transforms():
     return A.Compose([
         A.OneOf(

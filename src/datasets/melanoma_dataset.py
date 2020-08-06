@@ -79,7 +79,7 @@ class MelanomaDatasetTest(Dataset):
 
 
 class MelanomaDatasetGeneratedData(Dataset):
-    def __init__(self, mode: str, config: Namespace, transform=None):
+    def __init__(self, mode: str, config: Namespace, transform=None, use_external=False):
         super().__init__()
         self.mode = mode
         if mode not in ['train', 'val']:
@@ -87,6 +87,16 @@ class MelanomaDatasetGeneratedData(Dataset):
         self.fold = config.fold
         self.df = pd.read_csv(f"{config.data_path}/{config.generated_data_csv}.csv")
         self.image_folder = config.generated_data_image_folder
+        self.df.loc[:, 'data_t'] = 'competition'
+        if use_external:
+            print(f'Will use external data for {mode}')
+            self.external_df = pd.read_csv(f"{config.data_path}/external_{mode}_{config.fold}.csv")
+            self.external_df.loc[:, 'data_t'] = 'external'
+            self.df = pd.concat([self.df, self.external_df])
+            self.external_image_folder = config.external_image_folder
+        self.df.loc[:, 'bin_target'] = (self.df.target >= 0.5).astype(int)
+        self.targets = self.df.bin_target.values
+        self.target_counts = self.df.bin_target.value_counts().values
         self.transform = transform
 
     def __len__(self) -> int:
@@ -95,7 +105,11 @@ class MelanomaDatasetGeneratedData(Dataset):
     def __getitem__(self, index) -> Tuple[torch.Tensor, torch.Tensor]:
         row = self.df.iloc[index]
         img_id = row.image_name
-        img_path = f"{self.image_folder}/{img_id}.jpg"
+        img_type = row.data_t
+        if img_type == 'competition':
+            img_path = f"{self.image_folder}/{img_id}.jpg"
+        else:
+            img_path = f"{self.external_image_folder}/{img_id}.jpg"
         image = skimage.io.imread(img_path)
         if self.transform is not None:
             image = self.transform(image=image)['image']

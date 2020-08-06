@@ -187,6 +187,7 @@ class MelanomaModel(pl.LightningModule):
                     mode="train",
                     config=self.hparams,
                     transform=get_training_trasnforms(self.hparams.training_transforms),
+                    use_external=self.hparams.use_external
             )
         else:
             raise NotImplementedError
@@ -344,13 +345,19 @@ class MelanomaModel(pl.LightningModule):
 
         :param checkpoint: Path to the checkpoint containing the weights to be loaded.
         """
-        checkpoint = torch.load(checkpoint, map_location=lambda storage, loc: storage,)
-        pretrained_dict = checkpoint["state_dict"]
-        model_dict = self.state_dict()
-
-        # 1. filter out unnecessary keys
-        pretrained_dict = {k: v for k, v in pretrained_dict.items() if k in model_dict}
-        # 2. overwrite entries in the existing state dict
-        model_dict.update(pretrained_dict)
-        # 3. load the new state dict
-        self.load_state_dict(pretrained_dict)
+        if checkpoint.endswith('ckpt'):
+            checkpoint = torch.load(checkpoint, map_location=lambda storage, loc: storage,)
+            pretrained_dict = checkpoint["state_dict"]
+            model_dict = self.state_dict()
+            # 1. filter out unnecessary keys
+            pretrained_dict = {k: v for k, v in pretrained_dict.items() if k in model_dict}
+            # 2. overwrite entries in the existing state dict
+            model_dict.update(pretrained_dict)
+            # 3. load the new state dict
+            self.load_state_dict(pretrained_dict)
+        elif checkpoint.endswith('pth'):
+            pretrained_dict = torch.load(checkpoint)
+            model_dict = self.state_dict()
+            pretrained_dict = {'net.'+k: v for k, v in pretrained_dict.items() if 'net.'+k in model_dict}
+            model_dict.update(pretrained_dict)
+            self.load_state_dict(pretrained_dict)
