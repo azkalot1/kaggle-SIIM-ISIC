@@ -5,11 +5,11 @@ import torch
 
 
 class ClassificationSingleHeadMax(nn.Module):
-    def __init__(self, model_name='resnet34', num_classes=1):
+    def __init__(self, model_name='resnet34', num_classes=1, pretrained=True):
         super().__init__()
         m = timm.create_model(
             model_name,
-            pretrained=True)
+            pretrained=pretrained)
         self.enc = nn.Sequential(*list(m.children())[:-2])
         nc = list(m.children())[-1].in_features
         self.head = nn.Sequential(
@@ -19,6 +19,16 @@ class ClassificationSingleHeadMax(nn.Module):
             nn.Dropout(0.5),
             nn.Linear(nc, num_classes))
 
+        self.features = nn.Sequential(
+            nn.AdaptiveMaxPool2d((1, 1)),
+            nn.Flatten()
+        )
+
+    def get_features(self, x):
+        x = self.enc(x)
+        x = self.features(x)
+        return x
+
     def forward(self, x):
         x = self.enc(x)
         x = self.head(x)
@@ -26,11 +36,11 @@ class ClassificationSingleHeadMax(nn.Module):
 
 
 class ClassificationDounleHeadMax(nn.Module):
-    def __init__(self, model_name='resnet34', num_classes=1):
+    def __init__(self, model_name='resnet34', num_classes=1, pretrained=True):
         super().__init__()
         m = timm.create_model(
             model_name,
-            pretrained=True)
+            pretrained=pretrained)
         self.enc = nn.Sequential(*list(m.children())[:-2])
         nc = list(m.children())[-1].in_features
         self.head = nn.Sequential(
@@ -42,6 +52,15 @@ class ClassificationDounleHeadMax(nn.Module):
             nn.LeakyReLU(),
             nn.Dropout(0.5),
             nn.Linear(nc//2, num_classes))
+        self.features = nn.Sequential(
+            nn.AdaptiveMaxPool2d((1, 1)),
+            nn.Flatten()
+        )
+
+    def get_features(self, x):
+        x = self.enc(x)
+        x = self.features(x)
+        return x
 
     def forward(self, x):
         x = self.enc(x)
@@ -50,11 +69,11 @@ class ClassificationDounleHeadMax(nn.Module):
 
 
 class ClassificationSingleHeadConcat(nn.Module):
-    def __init__(self, model_name='resnet34', num_classes=1):
+    def __init__(self, model_name='resnet34', num_classes=1, pretrained=True):
         super().__init__()
         m = timm.create_model(
             model_name,
-            pretrained=True)
+            pretrained=pretrained)
         self.enc = nn.Sequential(*list(m.children())[:-2])
         nc = list(m.children())[-1].in_features
         self.head = nn.Sequential(
@@ -63,6 +82,15 @@ class ClassificationSingleHeadConcat(nn.Module):
             nn.LeakyReLU(),
             nn.Dropout(0.5),
             nn.Linear(2*nc, num_classes))
+        self.features = nn.Sequential(
+            nn.AdaptiveConcatPool2d((1, 1)),
+            nn.Flatten()
+        )
+
+    def get_features(self, x):
+        x = self.enc(x)
+        x = self.features(x)
+        return x
 
     def forward(self, x):
         x = self.enc(x)
@@ -71,11 +99,11 @@ class ClassificationSingleHeadConcat(nn.Module):
 
 
 class ClassificationDounleHeadConcat(nn.Module):
-    def __init__(self, model_name='resnet34', num_classes=1):
+    def __init__(self, model_name='resnet34', num_classes=1, pretrained=True):
         super().__init__()
         m = timm.create_model(
             model_name,
-            pretrained=True)
+            pretrained=pretrained)
         self.enc = nn.Sequential(*list(m.children())[:-2])
         nc = list(m.children())[-1].in_features
         self.head = nn.Sequential(
@@ -87,6 +115,16 @@ class ClassificationDounleHeadConcat(nn.Module):
             nn.LeakyReLU(),
             nn.Dropout(0.5),
             nn.Linear(nc//2, num_classes))
+
+        self.features = nn.Sequential(
+            nn.AdaptiveConcatPool2d((1, 1)),
+            nn.Flatten()
+        )
+
+    def get_features(self, x):
+        x = self.enc(x)
+        x = self.features(x)
+        return x
 
     def forward(self, x):
         x = self.enc(x)

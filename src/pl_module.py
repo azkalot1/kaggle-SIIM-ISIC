@@ -80,9 +80,7 @@ class MelanomaModel(pl.LightningModule):
         y_hat = self.forward(batch['features'])
         loss = self.criterion(y_hat, batch['target'])
 
-        # y_pred = nn.Softmax(dim=1)(y_hat).detach().cpu().numpy()[:, 1]
         y_pred = nn.Sigmoid()(y_hat).detach().cpu().numpy()
-        # y_true = batch['target'].detach().cpu().numpy().argmax(axis=1).clip(min=0, max=1).astype(int)  # dirty way
         y_true = batch['target'].detach().cpu().numpy()
         if all(y_true == 0) or all(y_true == 1):
             batch_roc_auc = 0.0
@@ -173,7 +171,8 @@ class MelanomaModel(pl.LightningModule):
                     mode="train",
                     config=self.hparams,
                     transform=get_training_trasnforms(self.hparams.training_transforms),
-                    use_external=self.hparams.use_external
+                    use_external=self.hparams.use_external,
+                    use_pseudolabeled=self.hparams.use_pseudolabeled
             )
         elif self.hparams.training_type == 'ad_learning':
             train_dataset = AdLearningMelanomaDataset(
@@ -236,20 +235,25 @@ class MelanomaModel(pl.LightningModule):
         )
 
     @staticmethod
-    def net_mapping(model_name: str, model_type: str) -> torch.nn.Module:
+    def net_mapping(model_name: str, model_type: str, pretrained: bool = True) -> torch.nn.Module:
         if model_type == 'DounleHeadConcat':
-            return ClassificationDounleHeadConcat(model_name)
+            return ClassificationDounleHeadConcat(model_name, pretrained=pretrained)
         elif model_type == 'SingleHeadConcat':
-            return ClassificationSingleHeadConcat(model_name)
+            return ClassificationSingleHeadConcat(model_name, pretrained=pretrained)
         elif model_type == 'DounleHeadMax':
-            return ClassificationDounleHeadMax(model_name)
+            return ClassificationDounleHeadMax(model_name, pretrained=pretrained)
         elif model_type == 'SingleHeadMax':
-            return ClassificationSingleHeadMax(model_name)
+            return ClassificationSingleHeadMax(model_name, pretrained=pretrained)
         else:
             raise NotImplementedError("Not a valid model configuration.")
 
     def get_net(self) -> torch.nn.Module:
-        return MelanomaModel.net_mapping(self.hparams.model_name, self.hparams.model_type)
+        print('Using imagenet init: {}'.format(self.hparams.use_imagenet_init))
+        return MelanomaModel.net_mapping(
+            self.hparams.model_name,
+            self.hparams.model_type,
+            self.hparams.use_imagenet_init
+            )
 
     def get_criterion(self):
         if "bce_with_logits" == self.hparams.criterion:

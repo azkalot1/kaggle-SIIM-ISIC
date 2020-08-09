@@ -1,5 +1,5 @@
 import datetime
-from argparse import ArgumentParser, Namespace
+from argparse import ArgumentParser, Namespace, ArgumentTypeError
 
 import torch
 from pytorch_lightning import Trainer, loggers, seed_everything
@@ -11,6 +11,17 @@ import sys
 
 SEED = 12
 seed_everything(12)
+
+
+def str2bool(v):
+    if isinstance(v, bool):
+        return v
+    if v.lower() in ('yes', 'true', 't', 'y', '1', 'True'):
+        return True
+    elif v.lower() in ('no', 'false', 'f', 'n', '0', 'False'):
+        return False
+    else:
+        raise ArgumentTypeError('Boolean value expected.')
 
 
 def main(hparams: Namespace):
@@ -67,16 +78,18 @@ if __name__ == "__main__":
     parser.add_argument("--image_folder", default="./data/jpeg-melanoma-128x128/train")
     parser.add_argument("--test_image_folder", default="./data/jpeg-melanoma-128x128/test")
     parser.add_argument("--training_transforms", default="light")
-    parser.add_argument("--use_mixup", default=False, type=bool)
-    parser.add_argument("--make_submission", default=False, type=bool)
+    parser.add_argument("--use_mixup", default=False, type=str2bool)
+    parser.add_argument("--make_submission", default=False, type=str2bool)
     parser.add_argument("--mixup_alpha", default=1.0, type=float)
-    parser.add_argument("--use_weightened", default=False, type=bool)
+    parser.add_argument("--use_weightened", default=False, type=str2bool)
     parser.add_argument("--generated_data_csv", type=str)
     parser.add_argument("--generated_data_image_folder", type=str)
-    parser.add_argument("--profiler", default=False, type=bool)
-    parser.add_argument("--fast_dev_run", default=False, type=bool)
-    parser.add_argument("--auto_lr_find", default=False, type=bool)
-    parser.add_argument("--use_external", default=False, type=bool)
+    parser.add_argument("--profiler", default=False, type=str2bool)
+    parser.add_argument("--fast_dev_run", default=False, type=str2bool)
+    parser.add_argument("--auto_lr_find", default=False, type=str2bool)
+    parser.add_argument("--use_external", default=False, type=str2bool)
+    parser.add_argument("--use_pseudolabeled", default=False, type=str2bool)
+    parser.add_argument("--use_imagenet_init", default=True, type=str2bool)
     parser.add_argument("--external_image_folder", default=None)
     parser.add_argument("--training_type", default='normal')
     parser.add_argument("--precision", default=16, type=int)
@@ -91,8 +104,8 @@ if __name__ == "__main__":
     parser.add_argument("--warmup_epochs", default=10, type=int)
     parser.add_argument("--warmup_factor", default=1., type=int)
     parser.add_argument("--max_epochs", default=100, type=int)
-    parser.add_argument("--deterministic", default=True, type=bool)
-    parser.add_argument("--benchmark", default=True, type=bool)
+    parser.add_argument("--deterministic", default=True, type=str2bool)
+    parser.add_argument("--benchmark", default=True, type=str2bool)
 
     parser.add_argument("--model_type", default="SingleHeadMax", type=str)
     parser.add_argument("--model_name", default="resnet34", type=str)

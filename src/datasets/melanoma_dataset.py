@@ -15,7 +15,7 @@ def onehot(size, target):
 
 
 class MelanomaDataset(Dataset):
-    def __init__(self, mode: str, config: Namespace, transform=None, use_external=False):
+    def __init__(self, mode: str, config: Namespace, transform=None, use_external=False, use_pseudolabeled=False):
         super().__init__()
         self.mode = mode
         if mode not in ['train', 'val']:
@@ -30,9 +30,16 @@ class MelanomaDataset(Dataset):
             self.external_df.loc[:, 'data_t'] = 'external'
             self.df = pd.concat([self.df, self.external_df])
             self.external_image_folder = config.external_image_folder
+        if use_pseudolabeled:
+            print(f'Will use pseudolabeled data for {mode}')
+            self.pseudolabeled_df = pd.read_csv(f"{config.data_path}/labeled_test.csv")
+            self.pseudolabeled_df.loc[:, 'data_t'] = 'test'
+            self.df = pd.concat([self.df, self.pseudolabeled_df])
+            self.test_image_folder = config.test_image_folder
         self.transform = transform
-        self.targets = self.df.target.values
-        self.target_counts = self.df.target.value_counts().values
+        self.df.loc[:, 'bin_target'] = (self.df.target >= 0.5).astype(int)
+        self.targets = self.df.bin_target.values
+        self.target_counts = self.df.bin_target.value_counts().values
 
     def __len__(self) -> int:
         return self.df.shape[0]
@@ -43,8 +50,10 @@ class MelanomaDataset(Dataset):
         img_type = row.data_t
         if img_type == 'competition':
             img_path = f"{self.image_folder}/{img_id}.jpg"
-        else:
+        elif img_type == 'external':
             img_path = f"{self.external_image_folder}/{img_id}.jpg"
+        elif img_type == 'test':
+            img_path = f"{self.test_image_folder}/{img_id}.jpg"
         image = skimage.io.imread(img_path)
         if self.transform is not None:
             image = self.transform(image=image)['image']
