@@ -23,19 +23,23 @@ class MelanomaDataset(Dataset):
         self.image_folder = config.image_folder
         self.fold = config.fold
         self.df = pd.read_csv(f"{config.data_path}/{mode}_{config.fold}.csv")
+        print('N samples from original data: {}'.format(self.df.shape[0]))
         self.df.loc[:, 'data_t'] = 'competition'
         if use_external:
-            print(f'Will use external data for {mode}')
-            self.external_df = pd.read_csv(f"{config.data_path}/external_{mode}_{config.fold}.csv")
+            print(f'Will use external data for: {mode}')
+            self.external_df = pd.read_csv(f"{config.data_path}/external_train_cleaned.csv")
             self.external_df.loc[:, 'data_t'] = 'external'
             self.df = pd.concat([self.df, self.external_df])
             self.external_image_folder = config.external_image_folder
+            print('N samples from external data: {}'.format(self.external_df.shape[0]))
         if use_pseudolabeled:
             print(f'Will use pseudolabeled data for {mode}')
             self.pseudolabeled_df = pd.read_csv(f"{config.data_path}/labeled_test.csv")
             self.pseudolabeled_df.loc[:, 'data_t'] = 'test'
             self.df = pd.concat([self.df, self.pseudolabeled_df])
             self.test_image_folder = config.test_image_folder
+            print('N samples from pseudolabeled test data: {}'.format(self.pseudolabeled_df.shape[0]))
+        print('Total N samples: {}'.format(self.df.shape[0]))
         self.transform = transform
         self.df.loc[:, 'bin_target'] = (self.df.target >= 0.5).astype(int)
         self.targets = self.df.bin_target.values
