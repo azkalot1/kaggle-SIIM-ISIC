@@ -59,8 +59,15 @@ class MelanomaModel(pl.LightningModule):
             batch_roc_auc = 0.0
             batch_ap = 0.0
         else:
-            batch_roc_auc = roc_auc_score(y_true, y_pred)  # if we use generated \ soft labels
-            batch_ap = average_precision_score(y_true, y_pred)
+            try:
+                batch_roc_auc = roc_auc_score(y_true, y_pred)
+            except ValueError:
+                batch_roc_auc = 0
+            try:
+                batch_ap = average_precision_score(y_true, y_pred)
+            except ValueError:
+                batch_ap = 0
+
         train_step = {
             "loss": loss,
             "predictions": y_pred,
@@ -86,8 +93,14 @@ class MelanomaModel(pl.LightningModule):
             batch_roc_auc = 0.0
             batch_ap = 0.0
         else:
-            batch_roc_auc = roc_auc_score(y_true, y_pred)
-            batch_ap = average_precision_score(y_true, y_pred)
+            try:
+                batch_roc_auc = roc_auc_score(y_true, y_pred)
+            except ValueError:
+                batch_roc_auc = 0
+            try:
+                batch_ap = average_precision_score(y_true, y_pred)
+            except ValueError:
+                batch_ap = 0
 
         val_step = {
             "val_loss": loss,
@@ -115,8 +128,14 @@ class MelanomaModel(pl.LightningModule):
             roc_auc = 0.0
             ap = 0.0
         else:
-            roc_auc = roc_auc_score(targets, predictions)  # if we use generated \ soft labels
-            ap = average_precision_score(targets, predictions)
+            try:
+                roc_auc = roc_auc_score(targets, predictions)
+            except ValueError:
+                roc_auc = 0
+            try:
+                ap = average_precision_score(targets, predictions)
+            except ValueError:
+                ap = 0
 
         train_epoch_end = {
             "loss": avg_loss,
@@ -143,8 +162,14 @@ class MelanomaModel(pl.LightningModule):
             roc_auc = 0.0
             ap = 0.0
         else:
-            roc_auc = roc_auc_score(targets, predictions)
-            ap = average_precision_score(targets, predictions)
+            try:
+                roc_auc = roc_auc_score(targets, predictions)
+            except ValueError:
+                roc_auc = 0
+            try:
+                ap = average_precision_score(targets, predictions)
+            except ValueError:
+                ap = 0     
 
         val_epoch_end = {
             "val_loss": avg_loss,
